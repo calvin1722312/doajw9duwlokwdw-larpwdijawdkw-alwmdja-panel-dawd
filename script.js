@@ -1,22 +1,28 @@
-// PERSISTENT INCIDENT LOGS (Saves logged infractions inside localStorage for the local user)
-let localCacheLogs = JSON.parse(localStorage.getItem('staff_incident_logs')) || [];
-
-// =========================================================================
-// 🌐 GLOBAL STAFF ACCOUNTS DATABASE (Update this list for your whole team!)
-// =========================================================================
-let userDatabase = [
-    { username: "Admin", password: "2312daiw@(#&H", rank: "Foundership Team" },
-    { username: "StaffMember1", password: "Password123!", rank: "Moderation Team" },
-    { username: "AdminMember2", password: "SecurePass321!", rank: "Administration Team+" }
+// PERSISTENT STAFF ACCOUNTS DATABASE (15 accounts across the 3 core ranks)
+let savedDatabase = JSON.parse(localStorage.getItem('staff_database'));
+let userDatabase = savedDatabase && Array.isArray(savedDatabase) ? savedDatabase : [
+    { username: "Admin", password: "2312daiw@(#&H", rank: "Foundership+" },
+    { username: "Calvin2014c", password: "nR403^@#", rank: "Foundership+" },
+    { username: "boom_amir", password: "308623407642", rank: "Moderation" },
+    { username: "Frustrated_Ninja", password: "3823528521", rank: "Foundership+" },
+    { username: "Josh", password: "Joshcandy0321", rank: "Foundership+" },
+    { username: "Bloodyboy0025", password: "80106535", rank: "Admin+" },
+    { username: "Jase_2021", password: "Jase2021!!!", rank: "Foundership+" },
+    { username: "wdoaowjd", password: "Password123", rank: "Moderation" },
+    { username: "djawjdk", password: "Password123", rank: "Moderation" },
+    { username: "kwmdaklwmdk", password: "Password123", rank: "Moderation" },
+    { username: "akwdmakwnfjonw", password: "Password123", rank: "Moderation" },
+    { username: "apkfaiwdiji", password: "Password123", rank: "Moderation" },
+    { username: "i29e8yq0dijs", password: "Password123", rank: "Moderation" },
+    { username: "djwhau9h", password: "Password123", rank: "Moderation" },
+    { username: "TrialMod", password: "TrialTestingModerationTesting:D", rank: "Moderation" }
 ];
-// =========================================================================
 
 window.addEventListener('DOMContentLoaded', function() {
     
     // --- AUTOLOGIN SESSION CHECKER ---
     const activeSession = JSON.parse(localStorage.getItem('active_staff_session'));
     if (activeSession) {
-        // Double check that the cached session user still exists in our global database
         let validUser = userDatabase.find(u => u.username === activeSession.username && u.password === activeSession.password);
         if (validUser) {
             launchMainWorkspace(validUser);
@@ -51,9 +57,7 @@ window.addEventListener('DOMContentLoaded', function() {
     if (btnLogout) {
         btnLogout.addEventListener('click', function() {
             localStorage.removeItem('active_staff_session'); 
-            document.getElementById('mainSystem').style.display = 'none';
-            document.getElementById('loginScreen').style.display = 'flex';
-            if(loginForm) loginForm.reset();
+            location.reload(); 
         });
     }
 
@@ -66,158 +70,76 @@ window.addEventListener('DOMContentLoaded', function() {
         document.getElementById('activeRankDisplay').innerText = userProfile.rank;
 
         applyPermissions(userProfile.rank);
-        renderRecentFeed();
     }
 
-    // --- NAVIGATION TAB LAYER HANDLERS ---
-    const navConsole = document.getElementById('navConsole');
-    const navCenter = document.getElementById('navCenter');
-    const navAccounts = document.getElementById('navAccounts');
-
-    const viewConsoleLayer = document.getElementById('viewConsoleLayer');
-    const viewCenterLayer = document.getElementById('viewCenterLayer');
-    const viewAccountsLayer = document.getElementById('viewAccountsLayer');
-    const viewTitle = document.getElementById('viewTitle');
-
-    function clearActiveTabs() {
-        if(navConsole) navConsole.classList.remove('active');
-        if(navCenter) navCenter.classList.remove('active');
-        if(navAccounts) navAccounts.classList.remove('active');
-        if(viewConsoleLayer) viewConsoleLayer.classList.remove('active-view');
-        if(viewCenterLayer) viewCenterLayer.classList.remove('active-view');
-        if(viewAccountsLayer) viewAccountsLayer.classList.remove('active-view');
-    }
-
-    if(navConsole) {
-        navConsole.addEventListener('click', function() {
-            clearActiveTabs();
-            navConsole.classList.add('active');
-            viewConsoleLayer.classList.add('active-view');
-            viewTitle.innerText = "Incident Form";
-        });
-    }
-
-    if(navCenter) {
-        navCenter.addEventListener('click', function() {
-            clearActiveTabs();
-            navCenter.classList.add('active');
-            viewCenterLayer.classList.add('active-view');
-            viewTitle.innerText = "Search Log Center";
-            renderLogCenterTable(localCacheLogs);
-        });
-    }
-
-    if(navAccounts) {
-        navAccounts.addEventListener('click', function() {
-            clearActiveTabs();
-            navAccounts.classList.add('active');
-            viewAccountsLayer.classList.add('active-view');
-            viewTitle.innerText = "System Accounts Roster";
-        });
-    }
-
-    // --- SUBMIT COMPONENT INFRACTION FORM ---
+    // --- SUBMIT COMPONENT INFRACTION FORM (Pushes directly to Discord Cloud) ---
     const incidentForm = document.getElementById('incidentForm');
     if (incidentForm) {
         incidentForm.addEventListener('submit', function(e) {
             e.preventDefault();
 
+            // 1. Gather form values
             const username = document.getElementById('username').value;
             const action = document.getElementById('action').value;
             const reason = document.getElementById('reason').value;
-            const notes = document.getElementById('notes').value;
-            const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const notes = document.getElementById('notes').value || 'No attachments.';
+            
+            // Get the active staff member logged into the panel
+            const activeSession = JSON.parse(localStorage.getItem('active_staff_session'));
+            const staffExecutor = activeSession ? activeSession.username : 'Unknown Staff';
+            const staffRank = activeSession ? activeSession.rank : 'N/A';
 
-            localCacheLogs.push({ username: username, action: action, reason: reason, notes: notes, time: timeString });
-            localStorage.setItem('staff_incident_logs', JSON.stringify(localCacheLogs));
+            // 2. Format a professional Discord Embed Object
+            const discordPayload = {
+                embeds: [{
+                    title: `🚨 New Infraction Logged`,
+                    color: 16724534, // Red color hex code in decimal
+                    fields: [
+                        { name: "👤 Player Username", value: username, inline: true },
+                        { name: "🔨 Action Taken", value: `**${action}**`, inline: true },
+                        { name: "📜 Rule Violated", value: reason, inline: false },
+                        { name: "📝 Notes / Proof", value: notes, inline: false },
+                        { name: "🛠️ Logged By", value: `${staffExecutor} (${staffRank})`, inline: true }
+                    ],
+                    timestamp: new Date().toISOString()
+                }]
+            };
 
-            incidentForm.reset();
-            renderRecentFeed();
-        });
-    }
+            // ⚠️ REPLACE THIS URL WITH YOUR ACTUAL DISCORD WEBHOOK URL ⚠️
+            const webhookUrl = "https://discord.com/api/webhooks/1517965113582161930/ehfk5mnv1MFwU6-qR-_7Px9nIHxffVX5Je_30C8nrrCLttRr10-jWDH3L_DyMFSRnX_-";
 
-    // --- REAL-TIME DATA FILTER INPUT ---
-    const searchInput = document.getElementById('logSearchInput');
-    if (searchInput) {
-        searchInput.addEventListener('input', function(e) {
-            const query = e.target.value.toLowerCase().trim();
-            const filtered = localCacheLogs.filter(function(log) {
-                return log.username.toLowerCase().includes(query);
+            // 3. Fetch POST Request to send data to the Cloud
+            fetch(webhookUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(discordPayload)
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert(`✅ Log for ${username} successfully saved to the cloud!`);
+                    incidentForm.reset();
+                } else {
+                    alert("❌ Cloud connection failed. Check your Webhook URL configuration.");
+                }
+            })
+            .catch(error => {
+                console.error('Error sending log:', error);
+                alert("❌ Network error. Could not reach cloud services.");
             });
-            renderLogCenterTable(filtered);
         });
     }
 });
 
 // --- DYNAMIC PERMISSIONS RULE HANDLER ---
 function applyPermissions(rank) {
-    const adminTab = document.getElementById('navAdminOnly');
     const optAdminBan = document.getElementById('optAdminBan');
+    if (!optAdminBan) return;
 
-    if (!adminTab || !optAdminBan) return;
-
-    if (rank === "Foundership Team") {
-        adminTab.style.display = 'block';
-        optAdminBan.style.display = 'block';
-    } else if (rank === "Administration Team+") {
-        adminTab.style.display = 'none';
+    if (rank === "Foundership+" || rank === "Admin+") {
         optAdminBan.style.display = 'block';
     } else {
-        adminTab.style.display = 'none';
         optAdminBan.style.display = 'none';
     }
-}
-
-// --- RENDER RECENT PANEL STREAM ---
-function renderRecentFeed() {
-    const container = document.getElementById('recentFeed');
-    if (!container) return;
-    container.innerHTML = '';
-    const quickList = localCacheLogs.slice(-4).reverse();
-
-    if (quickList.length === 0) {
-        container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.9rem;">No entries logged yet.</div>';
-        return;
-    }
-
-    quickList.forEach(function(log) {
-        const badgeClass = log.action.toLowerCase().replace(' ', '');
-        const item = document.createElement('div');
-        item.className = 'record-item';
-        item.innerHTML = `
-            <div class="record-meta-top">
-                <span class="record-target">${log.username}</span>
-                <span class="badge badge-${badgeClass}">${log.action}</span>
-            </div>
-            <div style="font-size: 0.85rem; margin-bottom: 4px;"><strong>Rule:</strong> ${log.reason}</div>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">${log.notes || 'No attachments.'}</div>
-        `;
-        container.appendChild(item);
-    });
-}
-
-// --- RENDER COMPLETE DATA SEARCH TABLE ---
-function renderLogCenterTable(dataset) {
-    const tbody = document.getElementById('logCenterTableBody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-
-    if (dataset.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 30px;">No records found.</td></tr>';
-        return;
-    }
-
-    const invertedDataset = dataset.slice().reverse();
-    invertedDataset.forEach(function(log) {
-        const badgeClass = log.action.toLowerCase().replace(' ', '');
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td style="font-weight: 700;">${log.username}</td>
-            <td><span class="badge badge-${badgeClass}">${log.action}</span></td>
-            <td style="font-size: 0.9rem;">${log.reason}</td>
-            <td style="color: var(--text-muted); font-size: 0.85rem;">${log.notes || '—'}</td>
-            <td style="color: var(--text-muted); font-size: 0.8rem;">${log.time}</td>
-        `;
-        tbody.appendChild(tr);
-    });
 }
