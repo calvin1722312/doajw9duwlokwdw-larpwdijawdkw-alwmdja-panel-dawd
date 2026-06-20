@@ -1,7 +1,7 @@
-// Local cache state tracking for logged incidents
-let localCacheLogs = [];
+// PERSISTENT INCIDENT LOGS (Saves logged infractions inside localStorage so they stay on the cloud)
+let localCacheLogs = JSON.parse(localStorage.getItem('staff_incident_logs')) || [];
 
-// PERSISTENT STAFF ACCOUNTS DATABASE (Saves newly made accounts inside localStorage)
+// PERSISTENT STAFF ACCOUNTS DATABASE
 let userDatabase = JSON.parse(localStorage.getItem('staff_database')) || [
     { username: "Admin", password: "2312daiw@(#&H", rank: "Foundership Team" }
 ];
@@ -26,7 +26,6 @@ window.addEventListener('DOMContentLoaded', function() {
             let matchedUser = userDatabase.find(u => u.username === uInput && u.password === pInput);
 
             if (matchedUser) {
-                // Save session down onto local storage parameters securely
                 localStorage.setItem('active_staff_session', JSON.stringify(matchedUser));
                 launchMainWorkspace(matchedUser);
             } else {
@@ -40,7 +39,7 @@ window.addEventListener('DOMContentLoaded', function() {
     const btnLogout = document.getElementById('btnLogout');
     if (btnLogout) {
         btnLogout.addEventListener('click', function() {
-            localStorage.removeItem('active_staff_session'); // Drop session flag
+            localStorage.removeItem('active_staff_session'); 
             document.getElementById('mainSystem').style.display = 'none';
             document.getElementById('loginScreen').style.display = 'flex';
             if(loginForm) loginForm.reset();
@@ -69,8 +68,6 @@ window.addEventListener('DOMContentLoaded', function() {
             const newRank = document.getElementById('newRank').value;
 
             userDatabase.push({ username: newUser, password: newPass, rank: newRank });
-            
-            // Sync database profile down onto browser cache tracking layer
             localStorage.setItem('staff_database', JSON.stringify(userDatabase));
 
             createAccountForm.reset();
@@ -129,7 +126,7 @@ window.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- SUBMIT COMPONENT INFRACTION FORM ---
+    // --- SUBMIT COMPONENT INFRACTION FORM (Now saves permanently!) ---
     const incidentForm = document.getElementById('incidentForm');
     if (incidentForm) {
         incidentForm.addEventListener('submit', function(e) {
@@ -142,6 +139,9 @@ window.addEventListener('DOMContentLoaded', function() {
             const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
             localCacheLogs.push({ username: username, action: action, reason: reason, notes: notes, time: timeString });
+            
+            // This line locks the new log entry onto the browser storage layer permanently
+            localStorage.setItem('staff_incident_logs', JSON.stringify(localCacheLogs));
 
             incidentForm.reset();
             renderRecentFeed();
