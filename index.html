@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Los Angeles Staff Center</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="loginScreen">
+        <div class="login-card">
+            <h2>Staff Network</h2>
+            <p>Please enter your access details below</p>
+            <div class="error-msg" id="loginError">Invalid credentials. Try again.</div>
+            <form id="loginForm" autocomplete="off">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="loginUser" placeholder="Enter username..." autocomplete="off" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPass" placeholder="Enter password..." autocomplete="off" required>
+                </div>
+                <button type="submit" class="btn-action">Login to Console</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="mainSystem">
+        <div class="system-wrapper">
+            <div class="sidebar">
+                <div>
+                    <div class="brand">
+                        <h1>Los Angeles</h1>
+                        <span>Staff Center</span>
+                    </div>
+                    <ul class="nav-links">
+                        <li><div id="navConsole" class="nav-item active">🛠️ Incident Form</div></li>
+                        <li><div id="navCenter" class="nav-item">🗂️ Log Center</div></li>
+                        <li id="navAdminOnly" style="display: none;"><div id="navAccounts" class="nav-item">👥 Create Account</div></li>
+                    </ul>
+                </div>
+                <div class="user-profile">
+                    <div class="profile-info">
+                        <p id="activeUserDisplay">Admin Core</p>
+                        <span id="activeRankDisplay">Foundership Team</span>
+                    </div>
+                    <button id="btnLogout" class="btn-logout">🚪 Logout</button>
+                </div>
+            </div>
+
+            <div class="main-workspace">
+                <div class="header">
+                    <h2 id="viewTitle">Incident Form</h2>
+                    <div class="status-badge"><div class="pulse-dot"></div>CONNECTED TO SERVICES</div>
+                </div>
+
+                <div id="viewConsoleLayer" class="view-layer active-view">
+                    <div class="grid-layout">
+                        <div class="melony-card">
+                            <h3>Log New Infraction</h3>
+                            <form id="incidentForm" autocomplete="off">
+                                <div class="form-group">
+                                    <label>Player Roblox Username</label>
+                                    <input type="text" id="username" placeholder="Type username..." autocomplete="off" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Action Taken</label>
+                                    <select id="action">
+                                        <option value="Note">Note</option>
+                                        <option value="Warning">Warning</option>
+                                        <option value="Kick">Kick</option>
+                                        <option value="Temp Ban">Temp Ban</option>
+                                        <option value="Ban Bolo">Ban Bolo (Any Rank)</option>
+                                        <option value="Ban" id="optAdminBan">Ban (Admin+ Only)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Rule Violated</label>
+                                    <input type="text" id="reason" placeholder="Type specific broken rule here..." autocomplete="off" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Notes / Proof Links</label>
+                                    <textarea id="notes" rows="4" placeholder="Enter proof links or details..." autocomplete="off"></textarea>
+                        </div>
+                                <button type="submit" class="btn-action">Save Log Entry</button>
+                            </form>
+                        </div>
+
+                        <div class="melony-card">
+                            <h3>Recent Activity (Current Session)</h3>
+                            <div class="feed-stream" id="recentFeed"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="viewCenterLayer" class="view-layer">
+                    <div class="search-wrapper">
+                        <input type="text" id="logSearchInput" placeholder="🔍 Type player username to filter list..." autocomplete="off">
+                    </div>
+                    <div class="results-table-container">
+                        <table class="results-table">
+                            <thead>
+                                <tr>
+                                    <th>Player Name</th>
+                                    <th>Action</th>
+                                    <th>Rule Violated</th>
+                                    <th>Notes</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logCenterTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="viewAccountsLayer" class="view-layer">
+                    <div class="melony-card" style="max-width: 600px;">
+                        <h3>Provision Staff Account</h3>
+                        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">Create credentials for new network field staff.</p>
+                        <div id="accountSuccess" style="color: var(--green); font-size: 0.9rem; margin-bottom: 15px; display: none; font-weight: 600;">✅ Staff account registered successfully!</div>
+                        <form id="createAccountForm" autocomplete="off">
+                            <div class="form-group">
+                                <label>New Username</label>
+                                <input type="text" id="newUsername" placeholder="Set login username..." autocomplete="off" required>
+                            </div>
+                            <div class="form-group">
+                                <label>New Password</label>
+                                <input type="text" id="newPassword" placeholder="Set login password..." autocomplete="off" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Assigned Staff Rank</label>
+                                <select id="newRank">
+                                    <option value="Moderation Team">Moderation Team</option>
+                                    <option value="Administration Team+">Administration Team+</option>
+                                    <option value="Foundership Team">Foundership Team</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn-action" style="background-color: #3d5afe;">Register Account</button>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
