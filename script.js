@@ -1,17 +1,28 @@
-// PERSISTENT INCIDENT LOGS (Saves logged infractions inside localStorage so they stay on the cloud)
+// PERSISTENT INCIDENT LOGS (Saves logged infractions inside localStorage for the local user)
 let localCacheLogs = JSON.parse(localStorage.getItem('staff_incident_logs')) || [];
 
-// PERSISTENT STAFF ACCOUNTS DATABASE
-let userDatabase = JSON.parse(localStorage.getItem('staff_database')) || [
-    { username: "Admin", password: "2312daiw@(#&H", rank: "Foundership Team" }
+// =========================================================================
+// 🌐 GLOBAL STAFF ACCOUNTS DATABASE (Update this list for your whole team!)
+// =========================================================================
+let userDatabase = [
+    { username: "Admin", password: "2312daiw@(#&H", rank: "Foundership Team" },
+    { username: "StaffMember1", password: "Password123!", rank: "Moderation Team" },
+    { username: "AdminMember2", password: "SecurePass321!", rank: "Administration Team+" }
 ];
+// =========================================================================
 
 window.addEventListener('DOMContentLoaded', function() {
     
     // --- AUTOLOGIN SESSION CHECKER ---
     const activeSession = JSON.parse(localStorage.getItem('active_staff_session'));
     if (activeSession) {
-        launchMainWorkspace(activeSession);
+        // Double check that the cached session user still exists in our global database
+        let validUser = userDatabase.find(u => u.username === activeSession.username && u.password === activeSession.password);
+        if (validUser) {
+            launchMainWorkspace(validUser);
+        } else {
+            localStorage.removeItem('active_staff_session');
+        }
     }
 
     // --- FORM SUBSCRIPTION LOGIN PROCESS ---
@@ -58,27 +69,6 @@ window.addEventListener('DOMContentLoaded', function() {
         renderRecentFeed();
     }
 
-    // --- NEW STAFF ACCOUNT REGISTRATION HANDLER ---
-    const createAccountForm = document.getElementById('createAccountForm');
-    if (createAccountForm) {
-        createAccountForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const newUser = document.getElementById('newUsername').value;
-            const newPass = document.getElementById('newPassword').value;
-            const newRank = document.getElementById('newRank').value;
-
-            userDatabase.push({ username: newUser, password: newPass, rank: newRank });
-            localStorage.setItem('staff_database', JSON.stringify(userDatabase));
-
-            createAccountForm.reset();
-            const succMsg = document.getElementById('accountSuccess');
-            if (succMsg) {
-                succMsg.style.display = 'block';
-                setTimeout(() => { succMsg.style.display = 'none'; }, 4000);
-            }
-        });
-    }
-
     // --- NAVIGATION TAB LAYER HANDLERS ---
     const navConsole = document.getElementById('navConsole');
     const navCenter = document.getElementById('navCenter');
@@ -122,11 +112,11 @@ window.addEventListener('DOMContentLoaded', function() {
             clearActiveTabs();
             navAccounts.classList.add('active');
             viewAccountsLayer.classList.add('active-view');
-            viewTitle.innerText = "Create System Accounts";
+            viewTitle.innerText = "System Accounts Roster";
         });
     }
 
-    // --- SUBMIT COMPONENT INFRACTION FORM (Now saves permanently!) ---
+    // --- SUBMIT COMPONENT INFRACTION FORM ---
     const incidentForm = document.getElementById('incidentForm');
     if (incidentForm) {
         incidentForm.addEventListener('submit', function(e) {
@@ -139,8 +129,6 @@ window.addEventListener('DOMContentLoaded', function() {
             const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
             localCacheLogs.push({ username: username, action: action, reason: reason, notes: notes, time: timeString });
-            
-            // This line locks the new log entry onto the browser storage layer permanently
             localStorage.setItem('staff_incident_logs', JSON.stringify(localCacheLogs));
 
             incidentForm.reset();
