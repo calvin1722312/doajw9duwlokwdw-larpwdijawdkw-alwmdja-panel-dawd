@@ -40,7 +40,9 @@
                         <span>Staff Center</span>
                     </div>
                     <ul class="nav-links">
-                        <li><div id="navConsole" class="nav-item active">🛠️ Incident Form</div></li>
+                        <li><div id="navShifts" class="nav-item active" style="cursor: pointer;">⏱️ Staff Shifts</div></li>
+                        <li><div id="navPunishments" class="nav-item" style="cursor: pointer;">🚨 User Punishments</div></li>
+                        <li><div id="navPromotions" class="nav-item" style="cursor: pointer;">👔 Staff Updates & Discipline</div></li>
                     </ul>
                 </div>
                 <div class="user-profile">
@@ -55,57 +57,94 @@
             <!-- MAIN WORKSPACE CONTENT -->
             <div class="main-workspace">
                 <div class="header">
-                    <h2 id="viewTitle">Incident Form</h2>
+                    <h2 id="viewTitle">Staff Shifts</h2>
                     <div class="status-badge"><div class="pulse-dot"></div>CONNECTED TO SERVICES</div>
                 </div>
 
-                <!-- CONSOLE LAYER -->
+                <!-- CONSOLE LAYER CONTAINER -->
                 <div id="viewConsoleLayer" class="view-layer active-view">
                     <div class="grid-layout" style="grid-template-columns: 1fr; max-width: 800px; margin: 0 auto; gap: 25px;">
                         
-                        <!-- CARD 1: INFRACTION LOG FORM -->
-                        <div class="melony-card">
-                            <h3>Log New Infraction</h3>
-                            <form id="incidentForm" autocomplete="off">
-                                <div class="form-group">
-                                    <label>Player Roblox Username</label>
-                                    <input type="text" id="username" placeholder="Type username..." autocomplete="off" required>
+                        <!-- TAB 1: SHIFT TRACKING LAYER -->
+                        <div id="tabContentShifts" class="menu-tab-content">
+                            <div class="melony-card">
+                                <h3>Staff Shift Tracker</h3>
+                                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Track your active duty hours for the network.</p>
+                                
+                                <div id="shiftStatusDisplay" style="font-weight: 700; margin-bottom: 20px; color: var(--text-muted); font-size: 0.95rem;">
+                                    🔴 Status: Off Duty
                                 </div>
-                                <div class="form-group">
-                                    <label>Action Taken</label>
-                                    <select id="action">
-                                        <option value="Note">Note</option>
-                                        <option value="Warning">Warning</option>
-                                        <option value="Kick">Kick</option>
-                                        <option value="Temp Ban">Temp Ban</option>
-                                        <option value="Ban Bolo">Ban Bolo (Any Rank)</option>
-                                        <option value="Ban" id="optAdminBan">Ban (Admin+ Only)</option>
-                                    </select>
+
+                                <div style="display: flex; gap: 12px;">
+                                    <button id="btnStartShift" class="btn-action" style="background-color: #2e7d32;">⏱️ Clock In</button>
+                                    <button id="btnEndShift" class="btn-action" style="background-color: #c62828; display: none;">🚪 Clock Out</button>
                                 </div>
-                                <div class="form-group">
-                                    <label>Rule Violated</label>
-                                    <input type="text" id="reason" placeholder="Type specific broken rule here..." autocomplete="off" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>Notes / Proof Links</label>
-                                    <textarea id="notes" rows="4" placeholder="Enter proof links or details..." autocomplete="off"></textarea>
-                                </div>
-                                <button type="submit" class="btn-action">Save Log Entry</button>
-                            </form>
+                            </div>
                         </div>
 
-                        <!-- CARD 2: SHIFT MANAGEMENT ENGINE -->
-                        <div class="melony-card">
-                            <h3>Staff Shift Tracker</h3>
-                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Track your active duty hours for the network.</p>
-                            
-                            <div id="shiftStatusDisplay" style="font-weight: 700; margin-bottom: 20px; color: var(--text-muted); font-size: 0.95rem;">
-                                🔴 Status: Off Duty
+                        <!-- TAB 2: USER PUNISHMENTS LAYER -->
+                        <div id="tabContentPunishments" class="menu-tab-content" style="display: none;">
+                            <div class="melony-card">
+                                <h3>Log User Punishment</h3>
+                                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Log disciplinary actions taken against regular game players.</p>
+                                <form id="incidentForm" autocomplete="off">
+                                    <div class="form-group">
+                                        <label>Player Roblox Username</label>
+                                        <input type="text" id="username" placeholder="Type Roblox username..." autocomplete="off" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Punishment Type</label>
+                                        <select id="action">
+                                            <option value="Note">Note</option>
+                                            <option value="Warning">Warning</option>
+                                            <option value="Kick">Kick</option>
+                                            <option value="Temp Ban">Temp Ban</option>
+                                            <option value="Ban Bolo">Ban Bolo (Any Rank)</option>
+                                            <option value="Ban" id="optAdminBan">Ban (Admin+ Only)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Rule Violated</label>
+                                        <input type="text" id="reason" placeholder="Type specific broken rule here..." autocomplete="off" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Notes / Proof Links</label>
+                                        <textarea id="notes" rows="4" placeholder="Enter proof links or details..." autocomplete="off"></textarea>
+                                    </div>
+                                    <button type="submit" class="btn-action">🚨 Save Punishment Log</button>
+                                </form>
                             </div>
+                        </div>
 
-                            <div style="display: flex; gap: 12px;">
-                                <button id="btnStartShift" class="btn-action" style="background-color: #2e7d32;">⏱️ Clock In</button>
-                                <button id="btnEndShift" class="btn-action" style="background-color: #c62828; display: none;">🚪 Clock Out</button>
+                        <!-- TAB 3: STAFF ROSTER UPDATES & DISCIPLINE -->
+                        <div id="tabContentPromotions" class="menu-tab-content" style="display: none;">
+                            <div class="melony-card">
+                                <h3>Roster Status & Internal Team Discipline</h3>
+                                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Log official rank shifts, roster changes, or management staff actions directly to tracking channels.</p>
+                                <form id="promotionForm" autocomplete="off">
+                                    <div class="form-group">
+                                        <label>Target Staff Member's Discord ID</label>
+                                        <input type="text" id="targetStaffId" placeholder="Paste staff's numeric Discord ID..." autocomplete="off" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Management / Disciplinary Action</label>
+                                        <select id="mgmtAction">
+                                            <option value="Promotion">🔺 Promotion</option>
+                                            <option value="Demotion">🔻 Demotion</option>
+                                            <option value="Suspension">⏳ Suspension</option>
+                                            <option value="Fired">❌ Fired</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>New Assigned Rank Title</label>
+                                        <input type="text" id="newRank" placeholder="e.g., Admin+, Management+, Moderation..." autocomplete="off" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Reason / Notes</label>
+                                        <textarea id="mgmtReason" rows="3" placeholder="Enter the reason for this action..." autocomplete="off" required></textarea>
+                                    </div>
+                                    <button type="submit" class="btn-action" style="background-color: #5c6bc0;">⚡ Send Status Update</button>
+                                </form>
                             </div>
                         </div>
 
