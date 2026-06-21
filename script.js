@@ -9,7 +9,7 @@ let userDatabase = savedDatabase && Array.isArray(savedDatabase) ? savedDatabase
     { username: "Bloodyboy0025", password: "80106535", rank: "Admin+" },
     { username: "Boom_amir", password: "308623407642", rank: "Moderation" },
     { username: "TrialMod", password: "TrialTestingModerationTesting:D", rank: "Moderation" },
-    { username: "wfkdawfokajdoe", password: "Password123", rank: "Moderation" },
+    { username: "Jase", password: "Jase2021!!!", rank: "Foundership+" },
     { username: "q902ie9qdi", password: "Password123", rank: "Moderation" },
     { username: "iu0qhw2yed9hkalmcs'f", password: "Password123", rank: "Moderation" },
     { username: "IQ028EIQWPp[lJwfdojfmFKIUEJ", password: "Password123", rank: "Moderation" },
