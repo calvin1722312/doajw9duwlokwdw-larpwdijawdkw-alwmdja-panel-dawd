@@ -1,4 +1,4 @@
-// PERSISTENT STAFF ACCOUNTS DATABASE (15 accounts across the 3 core ranks)
+// PERSISTENT STAFF ACCOUNTS DATABASE
 let savedDatabase = JSON.parse(localStorage.getItem('staff_database'));
 let userDatabase = savedDatabase && Array.isArray(savedDatabase) ? savedDatabase : [
     { username: "Admin", password: "2312daiw@(#&H", rank: "Foundership+" },
@@ -23,6 +23,28 @@ let shiftStartTime = null;
 
 window.addEventListener('DOMContentLoaded', function() {
     
+    // --- MENU TAB SWITCHING ENGINE ---
+    const tabMappings = [
+        { btn: document.getElementById('navShifts'), content: document.getElementById('tabContentShifts'), title: "Staff Shifts" },
+        { btn: document.getElementById('navPunishments'), content: document.getElementById('tabContentPunishments'), title: "User Punishments" },
+        { btn: document.getElementById('navPromotions'), content: document.getElementById('tabContentPromotions'), title: "Staff Updates & Discipline" }
+    ];
+
+    tabMappings.forEach(tab => {
+        if (tab.btn) {
+            tab.btn.addEventListener('click', function() {
+                tabMappings.forEach(t => { if(t.btn) t.btn.classList.remove('active'); });
+                tabMappings.forEach(t => { if(t.content) t.content.style.display = 'none'; });
+
+                tab.btn.classList.add('active');
+                if (tab.content) tab.content.style.display = 'block';
+                
+                const viewTitle = document.getElementById('viewTitle');
+                if (viewTitle) viewTitle.innerText = tab.title;
+            });
+        }
+    });
+
     // --- AUTOLOGIN SESSION CHECKER ---
     const activeSession = JSON.parse(localStorage.getItem('active_staff_session'));
     if (activeSession) {
@@ -59,7 +81,6 @@ window.addEventListener('DOMContentLoaded', function() {
     const btnLogout = document.getElementById('btnLogout');
     if (btnLogout) {
         btnLogout.addEventListener('click', function() {
-            // Guard clause: stop logout if they are actively clocked into a shift
             if (shiftStartTime) {
                 alert("⚠️ Please clock out of your active shift before logging out of the command console!");
                 return;
@@ -81,14 +102,14 @@ window.addEventListener('DOMContentLoaded', function() {
     }
 
     // =========================================================================
-    // --- HANDLER 1: SUBMIT COMPONENT INFRACTION FORM (Pushes to Discord) ---
+    // --- SYSTEM FORM 1: USER PUNISHMENT LOG ENTRY (Using Roblox Username) ---
     // =========================================================================
     const incidentForm = document.getElementById('incidentForm');
     if (incidentForm) {
         incidentForm.addEventListener('submit', function(e) {
             e.preventDefault();
 
-            const username = document.getElementById('username').value;
+            const targetUsername = document.getElementById('username').value;
             const action = document.getElementById('action').value;
             const reason = document.getElementById('reason').value;
             const notes = document.getElementById('notes').value || 'No attachments.';
@@ -99,20 +120,19 @@ window.addEventListener('DOMContentLoaded', function() {
 
             const incidentPayload = {
                 embeds: [{
-                    title: `🚨 New Infraction Logged`,
-                    color: 16724534, // Red side border stripe
+                    title: `🚨 New User Punishment Logged`,
+                    color: 16724534, // Red
                     fields: [
-                        { name: "👤 Player Username", value: username, inline: true },
-                        { name: "🔨 Action Taken", value: `**${action}**`, inline: true },
+                        { name: "👤 Offender (Roblox Username)", value: `**${targetUsername}**`, inline: true },
+                        { name: "🔨 Punishment Issued", value: `**${action}**`, inline: true },
                         { name: "📜 Rule Violated", value: reason, inline: false },
-                        { name: "📝 Notes / Proof", value: notes, inline: false },
-                        { name: "🛠️ Logged By", value: `${staffExecutor} (${staffRank})`, inline: true }
+                        { name: "📝 Proof / Notes", value: notes, inline: false },
+                        { name: "🛠️ Issued By Staff", value: `${staffExecutor} (${staffRank})`, inline: true }
                     ],
                     timestamp: new Date().toISOString()
                 }]
             };
 
-            // ⚠️ PASTE YOUR URL
             const infractionWebhookUrl = "https://discord.com/api/webhooks/1518034185351200950/PL0NSWZwaAY-WgVkVNtN1BXijbdzX20SDFguq0-M4-13RWXIiAk8i39m8Uco6sNM0pAY";
 
             fetch(infractionWebhookUrl, {
@@ -122,7 +142,7 @@ window.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => {
                 if (response.ok) {
-                    alert(`✅ Log for ${username} successfully saved to the cloud database!`);
+                    alert(`✅ Punishment log for player "${targetUsername}" successfully sent!`);
                     incidentForm.reset();
                 } else {
                     alert("❌ Cloud connection failed. Check your Webhook configurations.");
@@ -130,13 +150,13 @@ window.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert("❌ Network connection lost. Log was dropped.");
+                alert("❌ Network connection error.");
             });
         });
     }
 
     // =========================================================================
-    // --- HANDLER 2: STAFF SHIFT TRACKING LAYER (Pushes to Discord) ---
+    // --- SYSTEM FORM 2: STAFF SHIFT TRACKER ---
     // =========================================================================
     const btnStartShift = document.getElementById('btnStartShift');
     const btnEndShift = document.getElementById('btnEndShift');
@@ -145,7 +165,6 @@ window.addEventListener('DOMContentLoaded', function() {
     if (btnStartShift) {
         btnStartShift.addEventListener('click', function() {
             shiftStartTime = new Date();
-            
             btnStartShift.style.display = 'none';
             btnEndShift.style.display = 'block';
             shiftStatusDisplay.innerHTML = `🟢 Status: On Duty (Clocked in at ${shiftStartTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`;
@@ -165,7 +184,6 @@ window.addEventListener('DOMContentLoaded', function() {
             const staffExecutor = activeSession ? activeSession.username : 'Unknown Staff';
             const staffRank = activeSession ? activeSession.rank : 'N/A';
 
-            // Instantly clear UI states
             btnStartShift.style.display = 'block';
             btnEndShift.style.display = 'none';
             shiftStatusDisplay.innerHTML = `🔴 Status: Off Duty`;
@@ -174,7 +192,7 @@ window.addEventListener('DOMContentLoaded', function() {
             const shiftPayload = {
                 embeds: [{
                     title: `⏱️ Staff Shift Logged`,
-                    color: 3066993, // Green side border stripe
+                    color: 3066993, // Green
                     fields: [
                         { name: "🛠️ Staff Member", value: `**${staffExecutor}**`, inline: true },
                         { name: "📋 Current Rank", value: staffRank, inline: true },
@@ -186,7 +204,6 @@ window.addEventListener('DOMContentLoaded', function() {
                 }]
             };
 
-            // ⚠️ PASTE YOUR SHIFT LOGGING WEBHOOK URL HERE ⚠️
             const shiftWebhookUrl = "https://discord.com/api/webhooks/1518034604525752381/OW_ytWMrFwRJMNzGfbswR-c3qbJSZ8iS4vBUIDmW9tghi5XAp2caIElYXZdkxGJ1o5Tu";
 
             fetch(shiftWebhookUrl, {
@@ -198,24 +215,93 @@ window.addEventListener('DOMContentLoaded', function() {
                 if (response.ok) {
                     alert(`✅ Your shift has been uploaded! Total duration recorded: ${totalMinutes} minute(s).`);
                 } else {
-                    alert("❌ Shift data calculated, but cloud webhook transaction failed.");
+                    alert("❌ Shift data transaction failed.");
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert("❌ Connection timed out. Could not reach cloud relays.");
+                alert("❌ Connection timed out.");
             });
 
-            // Wipe temporary memory tracking variable
             shiftStartTime = null;
         });
     }
 
-    // --- ACCIDENT CONTROL: BLOCKS TAB CLOSURES DURING ACTIVE SHIFTS ---
+    // =========================================================================
+    // --- SYSTEM FORM 3: STAFF ROSTER UPDATES & MANAGEMENT ACTIONS (SPLIT WEBHOOKS) ---
+    // =========================================================================
+    const promotionForm = document.getElementById('promotionForm');
+    if (promotionForm) {
+        promotionForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const targetStaffId = document.getElementById('targetStaffId').value;
+            const mgmtAction = document.getElementById('mgmtAction').value;
+            const newRank = document.getElementById('newRank').value;
+            const mgmtReason = document.getElementById('mgmtReason').value;
+            
+            const activeSession = JSON.parse(localStorage.getItem('active_staff_session'));
+            const managerName = activeSession ? activeSession.username : 'Unknown Executive';
+            const managerRank = activeSession ? activeSession.rank : 'N/A';
+
+            let embedColor = 3447003; // Default Blue
+            let targetWebhookUrl = "";
+
+            // --- SPLIT LOGIC ASSIGNMENTS ---
+            if (mgmtAction === "Promotion") {
+                embedColor = 3066993; // Green
+                // 1. YOUR UNTOUCHED PROMOTIONS WEBHOOK URL:
+                targetWebhookUrl = "https://discord.com/api/webhooks/1518043825820536986/XMTlTFeIsPR8yzq41eXw5X7JEHlC5pteujgl8N-hoQoh2K6z9BXP8QnCnSbIHHFRYCHr";
+            } else {
+                // For Demotion, Suspension, or Fired
+                if (mgmtAction === "Demotion") embedColor = 15105570;     // Orange
+                if (mgmtAction === "Suspension") embedColor = 15844367;   // Yellow
+                if (mgmtAction === "Fired") embedColor = 12595844;        // Dark Red
+                
+                // 2. YOUR UNTOUCHED STAFF DISCIPLINE/INFRACTIONS WEBHOOK URL:
+                targetWebhookUrl = "https://discord.com/api/webhooks/1518044001817596025/-pF0xJ-9cT8pC4vmTCTtr45buVy_MJhnG8fGRvEn58jaHvXOYwVirExKW3u8JPe3F9d2";
+            }
+
+            const promoPayload = {
+                embeds: [{
+                    title: `👔 Official Staff Status & Disciplinary Log`,
+                    color: embedColor,
+                    fields: [
+                        { name: "👤 Target Staff Member", value: `<@${targetStaffId}>`, inline: true },
+                        { name: "⚡ Action Taken", value: `**${mgmtAction}**`, inline: true },
+                        { name: "📋 New Rank Designation", value: newRank, inline: false },
+                        { name: "📝 Reason / Notes", value: mgmtReason, inline: false },
+                        { name: "👑 Authorized By", value: `${managerName} (${managerRank})`, inline: true }
+                    ],
+                    timestamp: new Date().toISOString()
+                }]
+            };
+
+            fetch(targetWebhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(promoPayload)
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert(`✅ Staff action (${mgmtAction}) for ID ${targetStaffId} securely sent!`);
+                    promotionForm.reset();
+                } else {
+                    alert("❌ Webhook configuration break detected.");
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("❌ Connection lost.");
+            });
+        });
+    }
+
+    // --- ACCIDENT CONTROL: BLOCKS TAB CLOSURES ---
     window.addEventListener('beforeunload', function(e) {
         if (shiftStartTime) {
             e.preventDefault();
-            e.returnValue = 'You are currently clocked in! Please clock out before closing the panel.';
+            e.returnValue = 'You are currently clocked in!';
         }
     });
 });
@@ -223,11 +309,29 @@ window.addEventListener('DOMContentLoaded', function() {
 // --- DYNAMIC PERMISSIONS RULE HANDLER ---
 function applyPermissions(rank) {
     const optAdminBan = document.getElementById('optAdminBan');
-    if (!optAdminBan) return;
+    const navPromotions = document.getElementById('navPromotions');
 
-    if (rank === "Foundership+" || rank === "Admin+") {
-        optAdminBan.style.display = 'block';
-    } else {
-        optAdminBan.style.display = 'none';
+    // Convert rank text to lowercase to prevent capitalization discrepancies
+    const lowerRank = rank.toLowerCase();
+
+    // 1. Control access to the "Ban" option in user punishments dropdown
+    if (optAdminBan) {
+        if (lowerRank.includes('admin') || lowerRank.includes('management') || lowerRank.includes('founder')) {
+            optAdminBan.style.display = 'block';
+        } else {
+            optAdminBan.style.display = 'none';
+        }
+    }
+
+    // 2. Strict Lockdown for Staff Updates Navigation Menu Item
+    if (navPromotions) {
+        const listContainer = navPromotions.closest('li');
+        if (listContainer) {
+            if (lowerRank.includes('management') || lowerRank.includes('founder')) {
+                listContainer.style.display = 'block';  // Show tab ONLY for Management+ or Founders
+            } else {
+                listContainer.style.display = 'none';   // Admin+, Moderation, etc. won't see it at all
+            }
+        }
     }
 }
