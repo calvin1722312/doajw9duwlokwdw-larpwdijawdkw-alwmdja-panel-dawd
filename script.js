@@ -3,7 +3,7 @@ let savedDatabase = JSON.parse(localStorage.getItem('staff_database'));
 let userDatabase = savedDatabase && Array.isArray(savedDatabase) ? savedDatabase : [
     { username: "Admin", password: "2312daiw@(#&H", rank: "Foundership+" },
     { username: "Calvin2014c", password: "nR403^@#", rank: "Foundership+" },
-    { username: "Frustrated_Ninja", password: "Password123", rank: "Foundership+" },
+    { username: "Frustrated_Ninja", password: "3823528521", rank: "Foundership+" },
     { username: "Josh", password: "Joshcandy0321", rank: "Foundership+" },
     { username: "Admin2", password: "Password123", rank: "Foundership+" },
     { username: "Bloodyboy0025", password: "80106535", rank: "Admin+" },
