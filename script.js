@@ -33,11 +33,23 @@ window.addEventListener('DOMContentLoaded', function() {
     tabMappings.forEach(tab => {
         if (tab.btn) {
             tab.btn.addEventListener('click', function() {
-                tabMappings.forEach(t => { if(t.btn) t.btn.classList.remove('active'); });
-                tabMappings.forEach(t => { if(t.content) t.content.style.display = 'none'; });
+                // LOCKOUT RULE: Block User Punishments page if not actively clocked in
+                if (tab.btn.id === 'navPunishments' && !shiftStartTime) {
+                    alert("🔒 Access Denied: You must clock into an active Staff Shift before you can log user punishments!");
+                    return; // Stops the page from loading completely
+                }
 
+                // Cleanly remove active state from all items
+                tabMappings.forEach(t => { 
+                    if(t.btn) t.btn.classList.remove('active'); 
+                    if(t.content) t.content.style.display = 'none'; 
+                });
+
+                // Display the newly selected view layer
                 tab.btn.classList.add('active');
-                if (tab.content) tab.content.style.display = 'block';
+                if (tab.content) {
+                    tab.content.style.display = ''; // Dynamic fallback fixes broken layouts
+                }
                 
                 const viewTitle = document.getElementById('viewTitle');
                 if (viewTitle) viewTitle.innerText = tab.title;
@@ -108,6 +120,12 @@ window.addEventListener('DOMContentLoaded', function() {
     if (incidentForm) {
         incidentForm.addEventListener('submit', function(e) {
             e.preventDefault();
+
+            // DOUBLE CHECK PERMISSION SYSTEM
+            if (!shiftStartTime) {
+                alert("❌ Action Aborted: Your shift has ended. You can no longer submit records.");
+                return;
+            }
 
             const targetUsername = document.getElementById('username').value;
             const action = document.getElementById('action').value;
@@ -206,6 +224,12 @@ window.addEventListener('DOMContentLoaded', function() {
 
             const shiftWebhookUrl = "https://discord.com/api/webhooks/1518034604525752381/OW_ytWMrFwRJMNzGfbswR-c3qbJSZ8iS4vBUIDmW9tghi5XAp2caIElYXZdkxGJ1o5Tu";
 
+            // If user drops tracking focus from the user punishment view layer when stopping the shift, kick them safely back home
+            const currentActiveTab = document.querySelector('.nav-item.active');
+            if (currentActiveTab && currentActiveTab.id === 'navPunishments') {
+                document.getElementById('navShifts').click(); // Safely navigate home
+            }
+
             fetch(shiftWebhookUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -250,15 +274,11 @@ window.addEventListener('DOMContentLoaded', function() {
             // --- SPLIT LOGIC ASSIGNMENTS ---
             if (mgmtAction === "Promotion") {
                 embedColor = 3066993; // Green
-                // 1. YOUR UNTOUCHED PROMOTIONS WEBHOOK URL:
                 targetWebhookUrl = "https://discord.com/api/webhooks/1518043825820536986/XMTlTFeIsPR8yzq41eXw5X7JEHlC5pteujgl8N-hoQoh2K6z9BXP8QnCnSbIHHFRYCHr";
             } else {
-                // For Demotion, Suspension, or Fired
                 if (mgmtAction === "Demotion") embedColor = 15105570;     // Orange
                 if (mgmtAction === "Suspension") embedColor = 15844367;   // Yellow
                 if (mgmtAction === "Fired") embedColor = 12595844;        // Dark Red
-                
-                // 2. YOUR UNTOUCHED STAFF DISCIPLINE/INFRACTIONS WEBHOOK URL:
                 targetWebhookUrl = "https://discord.com/api/webhooks/1518044001817596025/-pF0xJ-9cT8pC4vmTCTtr45buVy_MJhnG8fGRvEn58jaHvXOYwVirExKW3u8JPe3F9d2";
             }
 
@@ -270,68 +290,4 @@ window.addEventListener('DOMContentLoaded', function() {
                         { name: "👤 Target Staff Member", value: `<@${targetStaffId}>`, inline: true },
                         { name: "⚡ Action Taken", value: `**${mgmtAction}**`, inline: true },
                         { name: "📋 New Rank Designation", value: newRank, inline: false },
-                        { name: "📝 Reason / Notes", value: mgmtReason, inline: false },
-                        { name: "👑 Authorized By", value: `${managerName} (${managerRank})`, inline: true }
-                    ],
-                    timestamp: new Date().toISOString()
-                }]
-            };
-
-            fetch(targetWebhookUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(promoPayload)
-            })
-            .then(response => {
-                if (response.ok) {
-                    alert(`✅ Staff action (${mgmtAction}) for ID ${targetStaffId} securely sent!`);
-                    promotionForm.reset();
-                } else {
-                    alert("❌ Webhook configuration break detected.");
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert("❌ Connection lost.");
-            });
-        });
-    }
-
-    // --- ACCIDENT CONTROL: BLOCKS TAB CLOSURES ---
-    window.addEventListener('beforeunload', function(e) {
-        if (shiftStartTime) {
-            e.preventDefault();
-            e.returnValue = 'You are currently clocked in!';
-        }
-    });
-});
-
-// --- DYNAMIC PERMISSIONS RULE HANDLER ---
-function applyPermissions(rank) {
-    const optAdminBan = document.getElementById('optAdminBan');
-    const navPromotions = document.getElementById('navPromotions');
-
-    // Convert rank text to lowercase to prevent capitalization discrepancies
-    const lowerRank = rank.toLowerCase();
-
-    // 1. Control access to the "Ban" option in user punishments dropdown
-    if (optAdminBan) {
-        if (lowerRank.includes('admin') || lowerRank.includes('management') || lowerRank.includes('founder')) {
-            optAdminBan.style.display = 'block';
-        } else {
-            optAdminBan.style.display = 'none';
-        }
-    }
-
-    // 2. Strict Lockdown for Staff Updates Navigation Menu Item
-    if (navPromotions) {
-        const listContainer = navPromotions.closest('li');
-        if (listContainer) {
-            if (lowerRank.includes('management') || lowerRank.includes('founder')) {
-                listContainer.style.display = 'block';  // Show tab ONLY for Management+ or Founders
-            } else {
-                listContainer.style.display = 'none';   // Admin+, Moderation, etc. won't see it at all
-            }
-        }
-    }
-}
+                        { name: "📝 Reason / Notes", value: mg
