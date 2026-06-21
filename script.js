@@ -39,7 +39,7 @@ window.addEventListener('DOMContentLoaded', function() {
                     return; // Stops the page from loading completely
                 }
 
-                // Cleanly remove active state from all items
+                // Cleanly remove active state from all items and hide everything first
                 tabMappings.forEach(t => { 
                     if(t.btn) t.btn.classList.remove('active'); 
                     if(t.content) t.content.style.display = 'none'; 
@@ -48,7 +48,7 @@ window.addEventListener('DOMContentLoaded', function() {
                 // Display the newly selected view layer
                 tab.btn.classList.add('active');
                 if (tab.content) {
-                    tab.content.style.display = ''; // Dynamic fallback fixes broken layouts
+                    tab.content.style.display = 'block'; // Force visibility on click
                 }
                 
                 const viewTitle = document.getElementById('viewTitle');
@@ -109,6 +109,14 @@ window.addEventListener('DOMContentLoaded', function() {
         
         document.getElementById('activeUserDisplay').innerText = userProfile.username;
         document.getElementById('activeRankDisplay').innerText = userProfile.rank;
+
+        // Hide secondary workspaces on initial login, only show the Shifts view
+        if (document.getElementById('tabContentPunishments')) document.getElementById('tabContentPunishments').style.display = 'none';
+        if (document.getElementById('tabContentPromotions')) document.getElementById('tabContentPromotions').style.display = 'none';
+        if (document.getElementById('tabContentShifts')) document.getElementById('tabContentShifts').style.display = 'block';
+        
+        // Ensure home button is visually highlighted active
+        if (document.getElementById('navShifts')) document.getElementById('navShifts').classList.add('active');
 
         applyPermissions(userProfile.rank);
     }
@@ -224,10 +232,10 @@ window.addEventListener('DOMContentLoaded', function() {
 
             const shiftWebhookUrl = "https://discord.com/api/webhooks/1518034604525752381/OW_ytWMrFwRJMNzGfbswR-c3qbJSZ8iS4vBUIDmW9tghi5XAp2caIElYXZdkxGJ1o5Tu";
 
-            // If user drops tracking focus from the user punishment view layer when stopping the shift, kick them safely back home
+            // If user ends their shift while on the punishment screen, bump them safely back home
             const currentActiveTab = document.querySelector('.nav-item.active');
             if (currentActiveTab && currentActiveTab.id === 'navPunishments') {
-                document.getElementById('navShifts').click(); // Safely navigate home
+                document.getElementById('navShifts').click(); 
             }
 
             fetch(shiftWebhookUrl, {
@@ -290,4 +298,65 @@ window.addEventListener('DOMContentLoaded', function() {
                         { name: "👤 Target Staff Member", value: `<@${targetStaffId}>`, inline: true },
                         { name: "⚡ Action Taken", value: `**${mgmtAction}**`, inline: true },
                         { name: "📋 New Rank Designation", value: newRank, inline: false },
-                        { name: "📝 Reason / Notes", value: mg
+                        { name: "📝 Reason / Notes", value: mgmtReason, inline: false },
+                        { name: "👑 Authorized By", value: `${managerName} (${managerRank})`, inline: true }
+                    ],
+                    timestamp: new Date().toISOString()
+                }]
+            };
+
+            fetch(targetWebhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(promoPayload)
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert(`✅ Staff action (${mgmtAction}) for ID ${targetStaffId} securely sent!`);
+                    promotionForm.reset();
+                } else {
+                    alert("❌ Webhook configuration break detected.");
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("❌ Connection lost.");
+            });
+        });
+    }
+
+    // --- ACCIDENT CONTROL: BLOCKS TAB CLOSURES ---
+    window.addEventListener('beforeunload', function(e) {
+        if (shiftStartTime) {
+            e.preventDefault();
+            e.returnValue = 'You are currently clocked in!';
+        }
+    });
+});
+
+// --- DYNAMIC PERMISSIONS RULE HANDLER ---
+function applyPermissions(rank) {
+    const optAdminBan = document.getElementById('optAdminBan');
+    const navPromotions = document.getElementById('navPromotions');
+
+    const lowerRank = rank.toLowerCase();
+
+    if (optAdminBan) {
+        if (lowerRank.includes('admin') || lowerRank.includes('management') || lowerRank.includes('founder')) {
+            optAdminBan.style.display = 'block';
+        } else {
+            optAdminBan.style.display = 'none';
+        }
+    }
+
+    if (navPromotions) {
+        const listContainer = navPromotions.closest('li');
+        if (listContainer) {
+            if (lowerRank.includes('management') || lowerRank.includes('founder')) {
+                listContainer.style.display = 'block';
+            } else {
+                listContainer.style.display = 'none';
+            }
+        }
+    }
+}
